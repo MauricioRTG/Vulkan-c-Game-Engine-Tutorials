@@ -1,0 +1,8 @@
+#Folders
+x64/
+.vs/
+#Files
+Tutorial.sln
+Tutorial.vcxproj
+Tutorial.vcxproj.filters
+Tutorial.vcxproj.user

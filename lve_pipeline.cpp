@@ -89,16 +89,6 @@ namespace lve
 		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
 		vertexInputInfo.pVertexBindingDescriptions = nullptr;
 
-
-		//Combine our viewport and scissior into a single viewport state create info variable
-		//Alowing multiple viewport and scissors
-		VkPipelineViewportStateCreateInfo viewportInfo{};
-		viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		viewportInfo.viewportCount = 1;
-		viewportInfo.pViewports = &configInfo.viewport;
-		viewportInfo.scissorCount = 1;
-		viewportInfo.pScissors = &configInfo.scissor;
-
 		// Will specify all the configuration we just gave above to make the graphic pipeline
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -107,7 +97,7 @@ namespace lve
 		//wire our pipeline create info to our config info
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &configInfo.inputAssemblyInfo;
-		pipelineInfo.pViewportState = &viewportInfo;
+		pipelineInfo.pViewportState = &configInfo.viewportInfo;
 		pipelineInfo.pRasterizationState = &configInfo.rasterizationInfo;
 		pipelineInfo.pMultisampleState = &configInfo.multisampleInfo;
 
@@ -122,10 +112,15 @@ namespace lve
 		pipelineInfo.basePipelineIndex = -1;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-		if (vkCreateGraphicsPipelines(lveDevice.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
-		{
+		if (vkCreateGraphicsPipelines(
+			lveDevice.device(),
+			VK_NULL_HANDLE,
+			1,
+			&pipelineInfo,
+			nullptr,
+			&graphicsPipeline) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create graphics pipeline");
-		}
+		}//end if 
 
 	}//end createGraphicsPipeline
 
@@ -142,9 +137,13 @@ namespace lve
 		}//end if 
 	}//end createShaderModule
 
-	PipelineConfigInfo LvePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height)
+	void LvePipeline::bind(VkCommandBuffer commandBuffer)
 	{
-		PipelineConfigInfo configInfo{};
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+	}//end bind
+
+	void LvePipeline::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo, uint32_t width, uint32_t height)
+	{
 		//Input asssembly stage configuration 
 		configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -164,6 +163,14 @@ namespace lve
 		//Are like the viewport instead of squishing our triangle it wil cut it
 		configInfo.scissor.offset = { 0, 0 };
 		configInfo.scissor.extent = { width, height };
+
+		//Combine our viewport and scissior into a single viewport state create info variable
+		//Alowing multiple viewport and scissors
+		configInfo.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		configInfo.viewportInfo.viewportCount = 1;
+		configInfo.viewportInfo.pViewports = &configInfo.viewport;
+		configInfo.viewportInfo.scissorCount = 1;
+		configInfo.viewportInfo.pScissors = &configInfo.scissor;
 
 		//Rasterization stage
 		//Breaks geometry into fragments for each pixel our triangle overlaps
@@ -227,7 +234,6 @@ namespace lve
 		configInfo.depthStencilInfo.front = {};  // Optional
 		configInfo.depthStencilInfo.back = {};   // Optional
 
-		return configInfo;
 	}//end defaultPipelineConfigInfo
 
 }//end namespace
